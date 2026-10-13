@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Khan Media House — Printing Press Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{--navy:#0B1B3A;--navy2:#13264F;--brand:#1D4ED8;--brand2:#1E3A8A;--ink:#0F172A;}
+  *{font-family:'Hind Siliguri','Noto Sans Bengali',sans-serif;}
+  body{background:#F4F6FB;color:var(--ink);}
+  ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#B6BED0;border-radius:3px}
+  #sidebar{background:linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%);transition:transform .3s ease;z-index:40}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;color:#9FB0D0;cursor:pointer;font-size:15px;font-weight:500;transition:.2s;margin-bottom:3px}
+  .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav-item.active{background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;box-shadow:0 4px 15px rgba(37,99,235,.4)}
+  .nav-item i{width:18px;text-align:center}
+  .card{background:#fff;border:1px solid #E3E8F2;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .kpi{background:#fff;border:1px solid #E3E8F2;border-radius:16px;padding:18px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,#2563EB)}
+  .inp{width:100%;border:1.5px solid #D5DCEA;border-radius:10px;padding:9px 12px;font-size:15px;background:#fff;outline:none;transition:.15s}
+  .inp:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  .inp:disabled{background:#F1F4FA;color:#64748B}
+  label.lbl{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:4px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 16px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:.15s;border:0;white-space:nowrap}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn-primary{background:linear-gradient(135deg,#2563EB,#1E40AF);color:#fff;box-shadow:0 3px 10px rgba(37,99,235,.3)}
+  .btn-primary:hover:not(:disabled){filter:brightness(1.08)}
+  .btn-ghost{background:#EEF2FA;color:#334155}.btn-ghost:hover{background:#E1E8F6}
+  .btn-danger{background:#FEE2E2;color:#B91C1C}.btn-danger:hover{background:#FECACA}
+  .btn-ok{background:#DCFCE7;color:#166534}.btn-ok:hover{background:#BBF7D0}
+  .btn-sm{padding:5px 10px;font-size:13px;border-radius:8px}
+  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .b-pending{background:#FEF3C7;color:#92400E}.b-processing{background:#DBEAFE;color:#1E40AF}
+  .b-ready{background:#EDE9FE;color:#5B21B6}.b-delivered{background:#DCFCE7;color:#166534}
+  table.tbl{width:100%;border-collapse:collapse;font-size:14px}
+  .tbl th{background:#F1F4FA;color:#475569;font-weight:600;text-align:left;padding:10px 12px;white-space:nowrap;font-size:13px}
+  .tbl td{padding:10px 12px;border-top:1px solid #EEF1F7;vertical-align:middle}
+  .tbl tr:hover td{background:#FAFBFF}
+  .tabbtn{padding:8px 14px;font-size:14px;font-weight:600;color:#64748B;border-bottom:3px solid transparent;cursor:pointer}
+  .tabbtn.active{color:#1D4ED8;border-color:#1D4ED8}
+  #modal-root{position:fixed;inset:0;background:rgba(11,27,58,.55);display:none;align-items:flex-start;justify-content:center;padding:20px 12px;z-index:60;overflow-y:auto}
+  #modal-root.open{display:flex}
+  .modal-box{background:#fff;border-radius:18px;width:100%;max-width:560px;box-shadow:0 25px 60px rgba(0,0,0,.35);margin:auto}
+  .modal-box.wide{max-width:880px}
+  #toast-container{position:fixed;top:16px;right:16px;z-index:100;display:flex;flex-direction:column;gap:8px}
+  .toast{background:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 8px 25px rgba(0,0,0,.18);font-size:14px;font-weight:500;border-left:4px solid #16A34A;display:flex;gap:8px;align-items:center;max-width:340px}
+  .toast.error{border-color:#DC2626}.toast.info{border-color:#2563EB}
+  .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#EEF2FA;border-radius:999px;padding:4px 6px 4px 12px;font-size:13px;font-weight:500}
+  .chip button{width:20px;height:20px;border-radius:50%;background:#fff;color:#B91C1C;font-size:11px}
+  @media (max-width:1023px){#sidebar{position:fixed;left:0;top:0;transform:translateX(-100%)}#sidebar.open{transform:none}
+    #sb-overlay.open{display:block}}
+  #sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:35}
+
+  /* ---- Cash memo ---- */
+  .memo{background:#fff;color:#111;width:100%;max-width:794px;margin:0 auto;padding:28px 32px;border:2px solid #0B1B3A;position:relative;font-size:15px}
+  .memo *{font-family:'Hind Siliguri','Noto Sans Bengali',sans-serif}
+  .memo-head{text-align:center;border-bottom:3px double #0B1B3A;padding-bottom:10px;margin-bottom:12px}
+  .memo-head h1{font-size:34px;font-weight:700;color:#0B1B3A;letter-spacing:.5px;line-height:1.1}
+  .memo-title{display:inline-block;background:#0B1B3A;color:#fff;padding:3px 22px;border-radius:999px;font-weight:600;margin:8px 0 12px}
+  .memo table{width:100%;border-collapse:collapse}
+  .memo th,.memo td{border:1px solid #334155;padding:6px 8px;text-align:left;font-size:14px}
+  .memo th{background:#E8EEF9}
+  .memo .r{text-align:right}
+  .memo-sign{display:flex;justify-content:space-between;margin-top:46px;font-size:13px}
+  .memo-sign div{border-top:1px solid #111;padding-top:4px;min-width:150px;text-align:center}
+  .flatpickr-calendar{font-family:inherit}
+
+  /* ---- Smooth scrolling & motion ---- */
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{overflow-anchor:none}
+  #modal-root,#nav,.overflow-x-auto,.overflow-y-auto{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .nav-item{transition:background-color .2s,color .2s,box-shadow .2s}
+  .btn{transition:filter .15s,background-color .15s,transform .12s}
+  .btn:active:not(:disabled){transform:scale(.97)}
+  @keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .view-in{animation:viewIn .3s ease-out}
+  @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  #modal-root.open .modal-box{animation:modalIn .22s ease-out}
+  @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+  .toast{animation:toastIn .25s ease-out}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+  #print-root{display:none}
+  @media print{
+    body>*:not(#print-root){display:none!important}
+    #print-root{display:block!important}
+    .memo{border-width:2px;max-width:100%}
+    @page{size:A4;margin:10mm}
+  }
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div id="modal-root" onclick="if(event.target===this)closeModal()"></div>
+<div id="print-root"></div>
+
+<!-- ============ Login ============ -->
+<div id="login-view" class="min-h-screen w-full flex items-center justify-center p-4" style="background:linear-gradient(135deg,#0B1B3A,#1E3A8A)">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
+    <div class="flex flex-col items-center mb-7">
+      <div class="flex gap-1 mb-3"><span class="w-4 h-4 rounded-full" style="background:#06B6D4"></span><span class="w-4 h-4 rounded-full" style="background:#EC4899"></span><span class="w-4 h-4 rounded-full" style="background:#FACC15"></span></div>
+      <h1 class="text-3xl font-bold" style="color:#0B1B3A">Khan Media House</h1>
+      <p class="text-slate-500 text-sm mt-1">Printing Press Management System</p>
+    </div>
+    <div class="space-y-4">
+      <div><label class="lbl">User ID</label>
+        <input id="login-id" class="inp" placeholder="e.g. rahim01" autocomplete="username" autocapitalize="none" onkeyup="if(event.key==='Enter')handleLogin()"></div>
+      <div><label class="lbl">Password</label>
+        <input id="login-pass" type="password" class="inp" placeholder="••••••" autocomplete="current-password" onkeyup="if(event.key==='Enter')handleLogin()"></div>
+      <button id="login-btn" class="btn btn-primary w-full py-3 text-base" onclick="handleLogin()"><i class="fas fa-right-to-bracket"></i> Login</button>
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-6">Only the admin can create new accounts.</p>
+  </div>
+</div>
+
+<!-- ============ Main app ============ -->
+<div id="app-view" class="min-h-screen w-full flex hidden">
+  <div id="sb-overlay" onclick="closeSidebar()"></div>
+  <aside id="sidebar" class="w-64 flex-shrink-0 flex flex-col h-screen sticky top-0">
+    <div class="p-5 border-b border-white/10">
+      <div class="flex gap-1 mb-2"><span class="w-3 h-3 rounded-full" style="background:#06B6D4"></span><span class="w-3 h-3 rounded-full" style="background:#EC4899"></span><span class="w-3 h-3 rounded-full" style="background:#FACC15"></span></div>
+      <div class="text-white font-bold text-xl leading-tight">Khan Media House</div>
+      <div class="text-slate-400 text-xs">Printing Press Management</div>
+    </div>
+    <nav id="nav" class="flex-1 p-3 overflow-y-auto"></nav>
+    <div class="p-4 border-t border-white/10">
+      <div class="flex items-center gap-3 mb-3">
+        <div id="me-avatar" class="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center"></div>
+        <div class="min-w-0"><div id="me-name" class="text-white text-sm font-semibold truncate"></div><div id="me-role" class="text-slate-400 text-xs"></div></div>
+      </div>
+      <div class="nav-item !text-rose-300" onclick="logout()"><i class="fas fa-right-from-bracket"></i> Logout</div>
+    </div>
+  </aside>
+  <main class="flex-1 min-w-0 flex flex-col min-h-screen">
+    <header class="bg-white border-b border-slate-200 px-4 lg:px-8 py-3 flex items-center justify-between sticky top-0 z-20">
+      <div class="flex items-center gap-3">
+        <button class="lg:hidden text-slate-600 p-1" onclick="toggleSidebar()"><i class="fas fa-bars text-lg"></i></button>
+        <div><div id="page-title" class="font-bold text-lg text-slate-800"></div><div id="page-sub" class="text-xs text-slate-400"></div></div>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <span id="today-label" class="hidden sm:inline text-slate-500"></span>
+        <span id="conn-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">Connecting…</span>
+      </div>
+    </header>
+    <div id="view" class="flex-1 p-4 lg:p-8"></div>
+  </main>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/orders.js"></script>
+<script src="js/people.js"></script>
+<script src="js/accounts.js"></script>
+<script src="js/salary.js"></script>
+<script>boot();</script>
+</body>
+</html>
